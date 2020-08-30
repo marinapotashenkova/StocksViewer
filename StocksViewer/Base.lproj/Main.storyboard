@@ -82,11 +82,18 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Please select the company you're interested in:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cW0-fp-Dk5">
+                                <rect key="frame" x="27" y="572" width="360" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
                             <constraint firstItem="oY3-Rd-bJf" firstAttribute="top" secondItem="A1E-cR-94P" secondAttribute="bottom" constant="40" id="2jP-XK-fAO"/>
                             <constraint firstItem="2RG-AW-53A" firstAttribute="top" secondItem="OIH-SQ-ENg" secondAttribute="bottom" constant="40" id="2oQ-oL-bRE"/>
+                            <constraint firstItem="VHr-E2-UEg" firstAttribute="top" secondItem="cW0-fp-Dk5" secondAttribute="bottom" id="3Gs-Ck-f6m"/>
                             <constraint firstItem="m8T-iI-vVn" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="84N-rI-UKN"/>
                             <constraint firstItem="OIH-SQ-ENg" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="40" id="87k-WI-Euf"/>
                             <constraint firstItem="VHr-E2-UEg" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="AeG-xE-O9q"/>
@@ -112,6 +119,7 @@
                             <constraint firstItem="owq-x7-X1m" firstAttribute="top" secondItem="oY3-Rd-bJf" secondAttribute="bottom" constant="40" id="pxn-Q0-cGt"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="A1E-cR-94P" secondAttribute="trailing" constant="40" id="qis-8t-jcD"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="oY3-Rd-bJf" secondAttribute="trailing" constant="40" id="ugB-bF-dOV"/>
+                            <constraint firstItem="cW0-fp-Dk5" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="zLI-zO-snf"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -123,6 +131,7 @@
                         <outlet property="logoImageView" destination="8Il-04-BhK" id="kFe-xQ-Aec"/>
                         <outlet property="priceChangeLabel" destination="owq-x7-X1m" id="wNY-SA-jzc"/>
                         <outlet property="priceLabel" destination="oY3-Rd-bJf" id="3C6-by-P48"/>
+                        <outlet property="selectCompanyLabel" destination="cW0-fp-Dk5" id="biO-QT-BgV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

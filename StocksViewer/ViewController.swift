@@ -18,191 +18,127 @@ class ViewController: UIViewController {
     @IBOutlet weak var priceLabel: UILabel!
     @IBOutlet weak var priceChangeLabel: UILabel!
     @IBOutlet weak var logoImageView: UIImageView!
+    @IBOutlet weak var selectCompanyLabel: UILabel!
     
     // MARK: - Private
     
-//    private lazy var companies = [
-//        "Apple": "AAPL",
-//        "Microsoft": "MSFT",
-//        "Google": "GOOGL",
-//        "Amazon": "AMZN",
-//        "Facebook": "FB"
-//    ]
+    private let networkClient = NetworkClient()
+    private lazy var companies: [String: String] = [ "-" : "-" ]
     
-    private lazy var companies: [String: String] = [:]
-    
-    private func requestQuote(for symbol: String) {
-        let token = "pk_ef129a18397448e893e542215faafcb9"
-        guard let url = URL(string: "https://cloud.iexapis.com/stable/stock/\(symbol)/quote?token=\(token)") else {
-            return
-        }
-        
-        let dataTask = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let data = data,
-                (response as? HTTPURLResponse)?.statusCode == 200,
-                error == nil {
-                self.parseQuote(from: data)
-            } else {
-                print("Network error!")
-            }
-        }
-        
-        dataTask.resume()
-    }
-    
-    private func requestLogoLink(for symbol: String) {
-        let token = "pk_ef129a18397448e893e542215faafcb9"
-        guard let url = URL(string: "https://cloud.iexapis.com/stable/stock/\(symbol)/logo?token=\(token)") else {
-            return
-        }
-        
-        let dataTask = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let data = data,
-                (response as? HTTPURLResponse)?.statusCode == 200,
-                error == nil {
-                self.parseLogoQuote(from: data)
-            } else {
-                print("Network error!")
-            }
-        }
-        
-        dataTask.resume()
-    }
-    
-    private func requestAvailableSymbols() {
-        let token = "pk_ef129a18397448e893e542215faafcb9"
-        guard let url = URL(string: "https://cloud.iexapis.com/stable/ref-data/symbols?token=\(token)") else {
-            return
-        }
-        
-        let dataTask = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let data = data,
-                (response as? HTTPURLResponse)?.statusCode == 200,
-                error == nil {
-                self.parseSymbols(from: data)
-            }
-        }
-        
-        dataTask.resume()
-    }
-    
-    private func parseQuote(from data: Data) {
-        do {
-            let jsonObject = try JSONSerialization.jsonObject(with: data)
-            
-            guard
-                let json = jsonObject as? [String: Any],
-                let companyName = json["companyName"] as? String,
-                let companySymbol = json["symbol"] as? String,
-                let price = json["latestPrice"] as? Double,
-                let priceChange = json["change"] as? Double else { return print("Invalid JSON") }
-            
-            DispatchQueue.main.async { [weak self] in
-                self?.displayStockInfo(companyName: companyName,
-                                       companySymbol: companySymbol,
-                                       price: price,
-                                       priceChange: priceChange)
-            }
-            
-            print("Company name is: " + companyName)
-        } catch {
-            print("JSON parsing error: " + error.localizedDescription)
-        }
-    }
-    
-    private func parseLogoQuote(from data: Data) {
-        do {
-            let jsonObject = try JSONSerialization.jsonObject(with: data)
-            guard
-                let json = jsonObject as? [String: Any],
-                let logoString = json["url"] as? String else {
-                    return print("Invalid JSON")
-            }
-            
-            let logoUrl = URL(string: logoString)
-            loadLogoImage(from: logoUrl)
-        } catch {
-            print("JSON parsing error: " + error.localizedDescription)
-        }
-    }
-    
-    private func loadLogoImage(from url: URL?) {
-        guard let url = url else {
-            return
-        }
-        
-        let dataTask = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let data = data,
-                (response as? HTTPURLResponse)?.statusCode == 200,
-                error == nil {
-                
-                DispatchQueue.main.async { [weak self] in
-                    self?.logoImageView.image = UIImage(data: data)
-                }
-            } else {
-                print("Network error!")
-            }
-        }
-        
-        dataTask.resume()
-    }
-    
-    private func parseSymbols(from data: Data) {
-        do {
-            let jsonObject = try JSONSerialization.jsonObject(with: data)
-            guard
-                let json = jsonObject as? [[String: Any]] else {
-                    print("Invalid JSON")
-                    return
-            }
-            
-            for item in json {
-                guard
-                    let name = item["name"] as? String,
-                    let symbol = item["symbol"] as? String else {
-                        print("Invalid JSON")
-                        return
-                }
-                companies[name] = symbol
-            }
-            
-            DispatchQueue.main.async { [weak self] in
-                self?.companyPickerView.reloadAllComponents()
-                self?.requestQuoteUpdate()
-            }
-        } catch {
-            print("JSON parsing error: " + error.localizedDescription)
-        }
-        
-    }
-    
-    private func displayStockInfo(companyName: String,
-                                  companySymbol: String,
-                                  price: Double,
-                                  priceChange: Double) {
+    private func display(stockInfo: StockInfo) {
         activityIndicator.stopAnimating()
-        companyNameLabel.text = companyName
-        companySymbolLabel.text = companySymbol
-        priceLabel.text = "\(price)"
-        priceChangeLabel.text = "\(priceChange)"
-        priceChangeLabel.textColor = priceChange.isZero ? .black : (priceChange > 0 ? .green : .red)
+        companyNameLabel.text = stockInfo.companyName
+        companySymbolLabel.text = stockInfo.companySymbol
+        priceLabel.text = "\(stockInfo.price)"
+        priceChangeLabel.text = "\(stockInfo.priceChange)"
+        priceChangeLabel.textColor = stockInfo.priceChange.isZero ? .black : (stockInfo.priceChange > 0 ? .green : .red)
         
     }
     
-    private func requestQuoteUpdate() {
-        if (!activityIndicator.isAnimating) {
+    private func displayWaitingForRequest() {
+        if activityIndicator.isAnimating {
             activityIndicator.startAnimating()
         }
+
         companyNameLabel.text = "-"
         companySymbolLabel.text = "-"
         priceLabel.text = "-"
         priceChangeLabel.text = "-"
         priceChangeLabel.textColor = .black
         
+    }
+    
+    private func requestQuoteUpdate() {
+        
+        if activityIndicator.isAnimating {
+            activityIndicator.startAnimating()
+        }
+
+        companyNameLabel.text = "-"
+        companySymbolLabel.text = "-"
+        priceLabel.text = "-"
+        priceChangeLabel.text = "-"
+        priceChangeLabel.textColor = .black
         let selectedRow = companyPickerView.selectedRow(inComponent: 0)
         let selectedSymbol = Array(companies.values)[selectedRow]
-        requestQuote(for: selectedSymbol)
-        requestLogoLink(for: selectedSymbol)
+        
+        networkClient.requestQuote(for: selectedSymbol) { [unowned self] (stockInfo, error) in
+            if let stockInfo = stockInfo,
+                error == nil {
+                DispatchQueue.main.async {
+                    self.display(stockInfo: stockInfo)
+                }
+            } else if let error = error {
+                self.errorHandler(error: error)
+            } else {
+                self.callAlertWith(title: "Error", message: "Sorry, there is some unexpected error occurred. Please try later")
+            }
+        }
+        
+        networkClient.requestLogoImage(for: selectedSymbol) { [unowned self] (imageData, error) in
+            if let imageData = imageData,
+                error == nil {
+                DispatchQueue.main.async {
+                    self.logoImageView.image = UIImage(data: imageData)
+                }
+            } else if let error = error {
+                self.errorHandler(error: error)
+            } else {
+                self.callAlertWith(title: "Error", message: "Sorry, there is some unexpected error occurred. Please try later")
+            }
+        }
+        
+    }
+    
+    private func errorHandler(error: NetworkClientError) {
+        switch error {
+        case .noInternetConnection:
+            self.callAlertWith(title: "Error", message: "It seems like your internet connection is lost. Please check your connection")
+        case .requestError:
+            self.callAlertWith(title: "Error", message: "Sorry, there is some error occurred on the app. We are already working on the fix. Please try later")
+        case .serverAvailabilityError:
+            self.callAlertWith(title: "Error", message: "Sorry, there is some error occurred on the server. We are already working on the fix. Please try later")
+        default:
+            self.callAlertWith(title: "Error", message: "Sorry, there is some unexpected error occurred. Please try later")
+        }
+    }
+    
+    private func callAlertWith(title: String, message: String) {
+        DispatchQueue.main.async {
+            let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+                            
+            let action = UIAlertAction(title: "OK", style: .default) { (action: UIAlertAction) in
+            print("OK")
+        }
+        
+            alertController.addAction(action)
+            self.present(alertController, animated: true, completion: nil)
+        }
+        
+    }
+    
+    private func performInitialRequests() {
+        networkClient.requestAvailableCompanies { [unowned self] (companies, error) in
+            if let companies = companies,
+                error == nil {
+                self.companies = companies
+                DispatchQueue.main.async {
+                    self.companyPickerView.reloadAllComponents()
+                    self.requestQuoteUpdate()
+                }
+            } else if let error = error {
+                self.errorHandler(error: error)
+            } else {
+                self.callAlertWith(title: "Error", message: "Sorry, there is some unexpected error occurred. Please try later")
+            }
+        }
+    }
+    
+    private func setup() {
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.startAnimating()
+        
+        performInitialRequests()
     }
     
     // MARK: - Lifecycle
@@ -213,14 +149,9 @@ class ViewController: UIViewController {
         companyPickerView.dataSource = self
         companyPickerView.delegate = self
         
-        activityIndicator.hidesWhenStopped = true
-        
-        activityIndicator.startAnimating()
-        requestAvailableSymbols()
-        
-//        requestQuoteUpdate()
+        setup()
     }
-
+    
 }
 
 // MARK: - UIPickerViewDataSource
@@ -246,6 +177,7 @@ extension ViewController: UIPickerViewDelegate {
     }
     
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        selectCompanyLabel.isHidden = true
         requestQuoteUpdate()
     }
     
